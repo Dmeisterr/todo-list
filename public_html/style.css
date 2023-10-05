@@ -1,0 +1,130 @@
+/* Reset some default browser styles */
+body, h1, ul, li {
+    margin: 0;
+    padding: 0;
+}
+
+/* Style the main content area */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 20px;
+    width: auto;
+    background-color: rgb(195, 199, 248);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Style the header */
+header {
+    background-color: #50b3a2;
+    color: white;
+    text-align: left;
+    padding: 10px;
+    position: relative;
+    width: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#leftColumn{
+    position: absolute;
+    background-color: #a0ede9;
+    width: 400px;
+    margin-top: 10px;
+    height: 80%;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#centerColumn {
+    position: absolute;
+    background-color: white;
+    margin-left: 410px;
+    margin-top: 10px;
+    width: calc(100% - 490px); 
+    height: 80%;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+
+#addTask, #addList {
+    margin-top: 10px;
+}
+
+
+#new-task-text {
+    position: absolute;  
+    width: 50%;  
+    left: 30px;
+    background-color: white;  
+    padding: 10px;  
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);  
+    margin-left: 10px;
+    display: flex;  
+    align-items: center;  
+}
+
+#task-deadline {
+    position: absolute;
+    right: 90px;
+    margin-top: 8px;
+}
+
+#new-list-text {
+    position: absolute;  
+    width: 60%;  
+    left: 30px;
+    background-color: white;  
+    padding: 10px;  
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1); 
+    margin-left: 10px;
+    display: flex;  
+    align-items: center;  
+}
+
+/* button */
+#listButton {
+    position: absolute;
+    right: 50px;
+    background-color: #a0ede9;
+    font-size: 20px;
+    color: #a0ede9;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+
+
+/* button */
+#taskButton {
+    position: absolute;
+    right: 50px;
+    background-color: white;
+    font-size: 20px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+
+
+/* Individual list containers */
+#list-div, #task-div {
+    width: 93%; 
+    /* TODO: fix left margin */
+}
+
+/* Style for list items remains the same */
+#lists li, #tasks li {
+    background-color: #e4e4e4;
+    margin: 8px 0;
+    padding: 10px;
+    text-align: left;
+    vertical-align:middle;
+    border-radius: 4px;
+    list-style-type:none;
+}
