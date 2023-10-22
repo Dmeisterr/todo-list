@@ -4,9 +4,9 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 type Connection = mysql.Connection;
 
-export const connectDB = async (): Promise<Connection> => {
+export const connectDB = async () => {
   try {
-    const connection = await mysql.createConnection({
+    const pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
@@ -14,11 +14,10 @@ export const connectDB = async (): Promise<Connection> => {
     });
 
     console.log("Successfully connected to the database.");
-    return connection;
+    return pool;
   } catch (error) {
     console.error(`Error connecting to the database: ${error}`);
     process.exit(1);
   }
 };
-
 
