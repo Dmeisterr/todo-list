@@ -6,7 +6,7 @@ import { Pool, OkPacket } from 'mysql2/promise';
 
 
 const app = express();
-app.use(bodyParser.json());  // Add this line to use body-parser
+app.use(bodyParser.json()); 
 
 const PORT = process.env.PORT || 3000;
 
@@ -25,6 +25,7 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello, world!');
 });
 
+// creates new todo
 // test with: "curl -X POST -H "Content-Type: application/json" -d '{"taskName": "testname1", "taskInfo": "testinfo", "isCompleted": false, "deadline": "2023-10-23"}' "http://localhost:3000/api/todo""
 app.post('/api/todo', async (req: Request, res: Response) => {
   const { taskName, taskInfo, isCompleted, deadline } = req.body;
@@ -43,6 +44,48 @@ app.post('/api/todo', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Database error' });
   }  
 });
+
+// updates existing todo
+// test with: curl -X PUT -H "Content-Type: application/json" -d '{"taskName": "updatedName", "taskInfo": "updatedInfo", "isCompleted": true, "deadline": "2023-11-23"}' "http://localhost:3000/api/todo/{TaskID}"
+app.put('/api/todo/:TaskID', async (req: Request, res: Response) => {
+  const { TaskID } = req.params;
+  const { taskName, taskInfo, isCompleted, deadline } = req.body;
+
+  // Data validation
+  if (!taskName || typeof taskName !== 'string') {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+
+  try {
+    const [result] = await dbPool.query(
+      'UPDATE Tasks SET taskName = ?, taskInfo = ?, isCompleted = ?, deadline = ? WHERE TaskID = ?',
+      [taskName, taskInfo, isCompleted, deadline, TaskID]
+    );
+    const okPacket = result as OkPacket;
+
+    if (okPacket.affectedRows === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    return res.status(200).json({ message: 'To-Do item updated', TaskID });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// TODO: remove.
+// get all items (for testing purposes)
+app.get('/api/todo', async (req: Request, res: Response) => {
+  try {
+    const [rows] = await dbPool.query('SELECT * FROM Tasks');
+    return res.status(200).json(rows);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Database error' });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
