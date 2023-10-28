@@ -46,7 +46,7 @@ app.post('/api/todo', async (req: Request, res: Response) => {
 });
 
 // updates existing todo
-// test with: curl -X PUT -H "Content-Type: application/json" -d '{"taskName": "updatedName", "taskInfo": "updatedInfo", "isCompleted": true, "deadline": "2023-11-23"}' "http://localhost:3000/api/todo/{TaskID}"
+// test with: curl -X PUT -H "Content-Type: application/json" -d '{"taskName": "updatedName", "taskInfo": "updatedInfo", "isCompleted": true, "deadline": "2023-11-23"}' "http://localhost:3000/api/todo/${TaskID}"
 app.put('/api/todo/:TaskID', async (req: Request, res: Response) => {
   const { TaskID } = req.params;
   const { taskName, taskInfo, isCompleted, deadline } = req.body;
@@ -74,7 +74,27 @@ app.put('/api/todo/:TaskID', async (req: Request, res: Response) => {
   }
 });
 
-// TODO: remove.
+// Delete a specific todo item by TaskID
+// Test with: curl -X DELETE "http://localhost:3000/api/todo/${TaskID}"
+app.delete('/api/todo/:TaskID', async (req: Request, res: Response) => {
+  const { TaskID } = req.params;
+
+  try {
+    const [result] = await dbPool.query('DELETE FROM Tasks WHERE TaskID = ?', [TaskID]);
+    const okPacket = result as OkPacket;
+
+    if (okPacket.affectedRows === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    return res.status(200).json({ message: 'To-Do item deleted', TaskID });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// TODO: remove this
 // get all items (for testing purposes)
 app.get('/api/todo', async (req: Request, res: Response) => {
   try {
@@ -85,6 +105,8 @@ app.get('/api/todo', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Database error' });
   }
 });
+
+
 
 
 app.listen(PORT, () => {
