@@ -1,4 +1,5 @@
 import * as express from 'express';
+import * as path from 'path';
 import * as bodyParser from 'body-parser';
 import { Request, Response } from 'express';
 import { connectDB } from './config/db';
@@ -7,6 +8,8 @@ import { Pool, OkPacket } from 'mysql2/promise';
 
 const app = express();
 app.use(bodyParser.json()); 
+
+app.use(express.static(path.join('dist', 'server', 'public_html')));
 
 const PORT = process.env.PORT || 3000;
 
@@ -21,9 +24,6 @@ connectDB()
     console.error(`Database connection error: ${error}`);
   });
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Hello, world!');
-});
 
 // creates new todo
 // test with: "curl -X POST -H "Content-Type: application/json" -d '{"taskName": "testname1", "taskInfo": "testinfo", "isCompleted": false, "deadline": "2023-10-23"}' "http://localhost:3000/api/todo""
@@ -36,13 +36,35 @@ app.post('/api/todo', async (req: Request, res: Response) => {
   }
 
   try {
-    const [result] = await dbPool.query('INSERT INTO Tasks (taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?)', [taskName, taskInfo, isCompleted, deadline]);
+    const [result] = await dbPool.query('INSERT INTO sys.Tasks (taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?)', [taskName, taskInfo, isCompleted, deadline]);
     const okPacket = result as OkPacket; 
     return res.status(201).json({ message: 'To-Do item created', id: okPacket.insertId });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Database error' });
   }  
+});
+
+// create a new list
+app.post('/api/lists', async (req: Request, res: Response) => {
+  const { listName } = req.body; 
+
+  // Data validation
+  if (!listName || typeof listName !== 'string') {
+    return res.status(400).json({ error: 'Invalid list name' });
+  }
+
+  try {
+    // Insert the new list into the database
+    const [result] = await dbPool.query('INSERT INTO sys.Lists (listName) VALUES (?)', [listName]);
+    const okPacket = result as OkPacket;
+    
+    // Respond with the ID of the newly created list
+    return res.status(201).json({ message: 'List created', id: okPacket.insertId });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // updates existing todo
@@ -58,7 +80,7 @@ app.put('/api/todo/:TaskID', async (req: Request, res: Response) => {
 
   try {
     const [result] = await dbPool.query(
-      'UPDATE Tasks SET taskName = ?, taskInfo = ?, isCompleted = ?, deadline = ? WHERE TaskID = ?',
+      'UPDATE sys.Tasks SET taskName = ?, taskInfo = ?, isCompleted = ?, deadline = ? WHERE TaskID = ?',
       [taskName, taskInfo, isCompleted, deadline, TaskID]
     );
     const okPacket = result as OkPacket;
@@ -80,7 +102,7 @@ app.delete('/api/todo/:TaskID', async (req: Request, res: Response) => {
   const { TaskID } = req.params;
 
   try {
-    const [result] = await dbPool.query('DELETE FROM Tasks WHERE TaskID = ?', [TaskID]);
+    const [result] = await dbPool.query('DELETE FROM sys.Tasks WHERE TaskID = ?', [TaskID]);
     const okPacket = result as OkPacket;
 
     if (okPacket.affectedRows === 0) {
@@ -94,15 +116,25 @@ app.delete('/api/todo/:TaskID', async (req: Request, res: Response) => {
   }
 });
 
-// TODO: remove this
-// get all items (for testing purposes)
-app.get('/api/todo', async (req: Request, res: Response) => {
+// Get tasks for a specific list
+app.get('/api/lists/:listId/tasks', async (req: Request, res: Response) => {
+  const { listId } = req.params;
   try {
-    const [rows] = await dbPool.query('SELECT * FROM Tasks');
-    return res.status(200).json(rows);
+    const [tasks] = await dbPool.query('SELECT * FROM sys.Tasks WHERE listId = ?', [listId]);
+    res.json(tasks);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Database error' });
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get all lists
+app.get('/api/lists', async (req: Request, res: Response) => {
+  try {
+    const [lists] = await dbPool.query('SELECT * FROM sys.Lists'); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
@@ -110,5 +142,5 @@ app.get('/api/todo', async (req: Request, res: Response) => {
 
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
