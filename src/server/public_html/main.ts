@@ -4,7 +4,7 @@ let currentListId: string | null = null;
 
 function setupListEventListeners() {
   document.querySelectorAll('#lists li').forEach(listItem => {
-    listItem.addEventListener('click', function(this: HTMLLIElement) {
+    listItem.addEventListener('click', function (this: HTMLLIElement) {
       const listId = this.getAttribute('data-list-id');
       console.log("Clicked list ID:", listId);
       if (listId !== null) {
@@ -30,43 +30,56 @@ async function fetchTasksForList(listId: string) {
 
 function updateTaskListDisplay(tasks: any[]) {
   const tasksContainer = document.querySelector('#tasks');
-  if (tasksContainer != null){
-    tasksContainer.innerHTML = ''; 
+  if (tasksContainer != null) {
+    tasksContainer.innerHTML = '';
 
-    
     tasks.forEach(task => {
+      if (!task.isCompleted) {
         const taskItem = document.createElement('li');
-        taskItem.textContent = task.taskName; 
+
+        // Create a new element to hold the SVG
+        const svg = new DOMParser().parseFromString(`<svg class="checkIcon" fill="currentColor" width="20" height="20" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z" fill="currentColor"></path></svg>`, 'image/svg+xml').documentElement;
+
+        // Append SVG to the task item
+        taskItem.appendChild(svg);
+        svg.addEventListener('click', () => updateTaskCompletion(task.taskId));
+
+        // Set the text content of the task item
+        taskItem.append(task.taskName);
+
+        // Append the task item to the tasks container
         tasksContainer.appendChild(taskItem);
+      }
     });
   }
 }
 
+
 // handles adding a single list item to the display
 function addListToDisplay(list: { listName: string | null; listId: string }) {
-    const listsContainer = document.getElementById('lists');
-    const listItem = document.createElement('li');
-    if (list.listName !== null) listItem.innerText = list.listName;
-    listItem.setAttribute('data-list-id', list.listId);
+  const listsContainer = document.getElementById('lists');
+  const listItem = document.createElement('li');
+  if (list.listName !== null) listItem.innerText = list.listName;
+  listItem.setAttribute('data-list-id', list.listId);
 
-    //debugging
-    console.log("listID:", list.listId);
-    const listId = listItem.getAttribute('data-list-id');
-    console.log("Clicked list ID:", listId);
+  //debugging
+  console.log("listID:", list.listId);
+  const listId = listItem.getAttribute('data-list-id');
+  console.log("Clicked list ID:", listId);
 
-    if (listsContainer != null) 
-      listsContainer.appendChild(listItem);
-    setupListEventListeners(); 
-    
-  }
-  
-  // fetches and displays all lists
+  if (listsContainer != null)
+    listsContainer.appendChild(listItem);
+  setupListEventListeners();
+
+}
+
+// fetches and displays all lists
 async function fetchAndDisplayLists() {
   try {
     const response = await fetch('/api/lists');
     const lists = await response.json();
     const listsContainer = document.getElementById('lists');
-    if (listsContainer != null) listsContainer.innerHTML = ''; 
+    if (listsContainer != null) listsContainer.innerHTML = '';
     lists.forEach(addListToDisplay);
 
     // Check if there is at least one list and fetch tasks for the first one
@@ -80,6 +93,33 @@ async function fetchAndDisplayLists() {
     console.error("Failed to fetch lists:", error);
   }
 }
+
+async function updateTaskCompletion(taskId: string) {
+  if (!currentListId) {
+    console.error("No list selected");
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/todo/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ isCompleted: true })  // Assuming other fields are handled on the server or are not required
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Fetch and update the tasks list after updating the task
+    fetchTasksForList(currentListId);
+  } catch (error) {
+    console.error("Failed to update task:", error);
+  }
+}
+
 
 // adds a task to current list
 async function addTask() {
@@ -174,14 +214,16 @@ async function addList() {
   }
 }
 
+
+window.addEventListener('load', fetchAndDisplayLists);
+
 const listButton = document.getElementById('listButton');
 if (listButton) {
   listButton.addEventListener('click', addList);
 } else {
   console.error("List button not found");
 }
-  
-window.addEventListener('load', fetchAndDisplayLists);
+
 const taskButton = document.getElementById('taskButton');
 if (taskButton) {
   taskButton.addEventListener('click', addTask);
