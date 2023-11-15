@@ -19,14 +19,18 @@ let dbPool;
 });
 // creates new todo
 // test with: "curl -X POST -H "Content-Type: application/json" -d '{"taskName": "testname1", "taskInfo": "testinfo", "isCompleted": false, "deadline": "2023-10-23"}' "http://localhost:3000/api/todo""
-app.post('/api/todo', async (req, res) => {
+app.post('/api/lists/:listId/tasks', async (req, res) => {
+    const { listId } = req.params;
     const { taskName, taskInfo, isCompleted, deadline } = req.body;
-    // Data validation
+    // Data validation for listId and other fields
+    if (!listId || isNaN(parseInt(listId))) {
+        return res.status(400).json({ error: 'Invalid list ID' });
+    }
     if (!taskName || typeof taskName !== 'string') {
         return res.status(400).json({ error: 'Invalid input' });
     }
     try {
-        const [result] = await dbPool.query('INSERT INTO sys.Tasks (taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?)', [taskName, taskInfo, isCompleted, deadline]);
+        const [result] = await dbPool.query('INSERT INTO sys.Tasks (listId, taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?, ?)', [listId, taskName, taskInfo, isCompleted, deadline]);
         const okPacket = result;
         return res.status(201).json({ message: 'To-Do item created', id: okPacket.insertId });
     }
@@ -35,9 +39,9 @@ app.post('/api/todo', async (req, res) => {
         return res.status(500).json({ error: 'Database error' });
     }
 });
-// Endpoint to create a new list
+// create a new list
 app.post('/api/lists', async (req, res) => {
-    const { listName } = req.body; // Assuming that the list's name will be sent in the request body
+    const { listName } = req.body;
     // Data validation
     if (!listName || typeof listName !== 'string') {
         return res.status(400).json({ error: 'Invalid list name' });
@@ -59,12 +63,35 @@ app.post('/api/lists', async (req, res) => {
 app.put('/api/todo/:TaskID', async (req, res) => {
     const { TaskID } = req.params;
     const { taskName, taskInfo, isCompleted, deadline } = req.body;
-    // Data validation
-    if (!taskName || typeof taskName !== 'string') {
-        return res.status(400).json({ error: 'Invalid input' });
+    // Create an array to hold SQL query parameters
+    let queryParams = [];
+    let query = 'UPDATE sys.Tasks SET ';
+    // Add different parts of the query and parameters based on what is provided in the body
+    if (taskName !== undefined) {
+        query += 'taskName = ?, ';
+        queryParams.push(taskName);
+    }
+    if (taskInfo !== undefined) {
+        query += 'taskInfo = ?, ';
+        queryParams.push(taskInfo);
+    }
+    if (isCompleted !== undefined) {
+        query += 'isCompleted = ?, ';
+        queryParams.push(isCompleted);
+    }
+    if (deadline !== undefined) {
+        query += 'deadline = ?, ';
+        queryParams.push(deadline);
+    }
+    // Remove trailing comma and space, and add WHERE clause
+    query = query.slice(0, -2) + ' WHERE TaskID = ?';
+    queryParams.push(TaskID);
+    // Check if any field was provided for update
+    if (queryParams.length === 1) {
+        return res.status(400).json({ error: 'No fields provided for update' });
     }
     try {
-        const [result] = await dbPool.query('UPDATE sys.Tasks SET taskName = ?, taskInfo = ?, isCompleted = ?, deadline = ? WHERE TaskID = ?', [taskName, taskInfo, isCompleted, deadline, TaskID]);
+        const [result] = await dbPool.query(query, queryParams);
         const okPacket = result;
         if (okPacket.affectedRows === 0) {
             return res.status(404).json({ error: 'Item not found' });
@@ -108,7 +135,7 @@ app.get('/api/lists/:listId/tasks', async (req, res) => {
 // Get all lists
 app.get('/api/lists', async (req, res) => {
     try {
-        const [lists] = await dbPool.query('SELECT * FROM sys.Lists'); // Replace 'Lists' with your actual table name
+        const [lists] = await dbPool.query('SELECT * FROM sys.Lists');
         res.json(lists);
     }
     catch (err) {
