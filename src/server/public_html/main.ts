@@ -36,18 +36,15 @@ function updateTaskListDisplay(tasks: any[]) {
     tasks.forEach(task => {
       if (!task.isCompleted) {
         const taskItem = document.createElement('li');
-
-        // Create a new element to hold the SVG
         const svg = new DOMParser().parseFromString(`<svg class="checkIcon" fill="currentColor" width="20" height="20" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z" fill="currentColor"></path></svg>`, 'image/svg+xml').documentElement;
 
-        // Append SVG to the task item
         taskItem.appendChild(svg);
+        console.log(task);
+        console.log(task.taskId);
         svg.addEventListener('click', () => updateTaskCompletion(task.taskId));
 
-        // Set the text content of the task item
         taskItem.append(task.taskName);
 
-        // Append the task item to the tasks container
         tasksContainer.appendChild(taskItem);
       }
     });
@@ -106,7 +103,7 @@ async function updateTaskCompletion(taskId: string) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ isCompleted: true })  // Assuming other fields are handled on the server or are not required
+      body: JSON.stringify({ isCompleted: true }) 
     });
 
     if (!response.ok) {

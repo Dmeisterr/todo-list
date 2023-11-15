@@ -42,6 +42,8 @@ function updateTaskListDisplay(tasks: any[]) {
 
         // Append SVG to the task item
         taskItem.appendChild(svg);
+        console.log(task);
+        console.log(task.taskId);
         svg.addEventListener('click', () => updateTaskCompletion(task.taskId));
 
         // Set the text content of the task item

@@ -21,7 +21,7 @@ let dbPool;
 // test with: "curl -X POST -H "Content-Type: application/json" -d '{"taskName": "testname1", "taskInfo": "testinfo", "isCompleted": false, "deadline": "2023-10-23"}' "http://localhost:3000/api/todo""
 app.post('/api/lists/:listId/tasks', async (req, res) => {
     const { listId } = req.params;
-    const { taskName, taskInfo, isCompleted, deadline } = req.body;
+    var { taskName, taskInfo, isCompleted, deadline } = req.body;
     // Data validation for listId and other fields
     if (!listId || isNaN(parseInt(listId))) {
         return res.status(400).json({ error: 'Invalid list ID' });
@@ -29,6 +29,8 @@ app.post('/api/lists/:listId/tasks', async (req, res) => {
     if (!taskName || typeof taskName !== 'string') {
         return res.status(400).json({ error: 'Invalid input' });
     }
+    if (deadline == '')
+        deadline = null;
     try {
         const [result] = await dbPool.query('INSERT INTO sys.Tasks (listId, taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?, ?)', [listId, taskName, taskInfo, isCompleted, deadline]);
         const okPacket = result;
@@ -59,9 +61,9 @@ app.post('/api/lists', async (req, res) => {
     }
 });
 // updates existing todo
-// test with: curl -X PUT -H "Content-Type: application/json" -d '{"taskName": "updatedName", "taskInfo": "updatedInfo", "isCompleted": true, "deadline": "2023-11-23"}' "http://localhost:3000/api/todo/${TaskID}"
-app.put('/api/todo/:TaskID', async (req, res) => {
-    const { TaskID } = req.params;
+// test with: curl -X PUT -H "Content-Type: application/json" -d '{"taskName": "updatedName", "taskInfo": "updatedInfo", "isCompleted": true, "deadline": "2023-11-23"}' "http://localhost:3000/api/todo/${taskId}"
+app.put('/api/todo/:taskId', async (req, res) => {
+    const { taskId } = req.params;
     const { taskName, taskInfo, isCompleted, deadline } = req.body;
     // Create an array to hold SQL query parameters
     let queryParams = [];
@@ -84,8 +86,8 @@ app.put('/api/todo/:TaskID', async (req, res) => {
         queryParams.push(deadline);
     }
     // Remove trailing comma and space, and add WHERE clause
-    query = query.slice(0, -2) + ' WHERE TaskID = ?';
-    queryParams.push(TaskID);
+    query = query.slice(0, -2) + ' WHERE taskId = ?';
+    queryParams.push(taskId);
     // Check if any field was provided for update
     if (queryParams.length === 1) {
         return res.status(400).json({ error: 'No fields provided for update' });
@@ -96,24 +98,24 @@ app.put('/api/todo/:TaskID', async (req, res) => {
         if (okPacket.affectedRows === 0) {
             return res.status(404).json({ error: 'Item not found' });
         }
-        return res.status(200).json({ message: 'To-Do item updated', TaskID });
+        return res.status(200).json({ message: 'To-Do item updated', taskId });
     }
     catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'Database error' });
     }
 });
-// Delete a specific todo item by TaskID
-// Test with: curl -X DELETE "http://localhost:3000/api/todo/${TaskID}"
-app.delete('/api/todo/:TaskID', async (req, res) => {
-    const { TaskID } = req.params;
+// Delete a specific todo item by taskId
+// Test with: curl -X DELETE "http://localhost:3000/api/todo/${taskId}"
+app.delete('/api/todo/:taskId', async (req, res) => {
+    const { taskId } = req.params;
     try {
-        const [result] = await dbPool.query('DELETE FROM sys.Tasks WHERE TaskID = ?', [TaskID]);
+        const [result] = await dbPool.query('DELETE FROM sys.Tasks WHERE taskId = ?', [taskId]);
         const okPacket = result;
         if (okPacket.affectedRows === 0) {
             return res.status(404).json({ error: 'Item not found' });
         }
-        return res.status(200).json({ message: 'To-Do item deleted', TaskID });
+        return res.status(200).json({ message: 'To-Do item deleted', taskId });
     }
     catch (err) {
         console.error(err);
