@@ -73,6 +73,24 @@ function addListToDisplay(list: { listName: string | null; listId: string }) {
   const listId = listItem.getAttribute('data-list-id');
   console.log("Clicked list ID:", listId);
 
+  // Add Edit button
+  const editButton = document.createElement('button');
+  editButton.innerText = 'Edit';
+  editButton.addEventListener('click', (event) => {
+    event.stopPropagation(); // Prevent triggering the list item click event
+    editList(list.listId);
+  });
+  listItem.appendChild(editButton);
+
+  // Add Delete button
+  const deleteButton = document.createElement('button');
+  deleteButton.innerText = 'Delete';
+  deleteButton.addEventListener('click', (event) => {
+    event.stopPropagation(); // Prevent triggering the list item click event
+    deleteList(list.listId);
+  });
+  listItem.appendChild(deleteButton);
+
   if (listsContainer != null)
     listsContainer.appendChild(listItem);
   setupListEventListeners();
@@ -107,11 +125,28 @@ function initializeSortable() {
     new Sortable(listsContainer, {
       animation: 150,
       ghostClass: 'blue-background-class',
-      onEnd: function (evt: any) {
-        console.log('Item moved:', evt.item);
-        console.log('New order:', evt.newIndex);
+      onEnd: async function () {
+        const orderedListIds = Array.from(listsContainer.children)
+                                    .map(child => child.getAttribute('data-list-id'));
+        await updateListOrder(orderedListIds);
       },
     });
+  }
+}
+
+async function updateListOrder(orderedListIds: (string | null)[]) {
+  try {
+    const response = await fetch('/api/lists/order', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ orderedListIds })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Failed to update list order:", error);
   }
 }
 
@@ -232,6 +267,55 @@ async function addList() {
 
   } catch (error) {
     console.error("Failed to add list:", error);
+  }
+}
+
+// Function to delete a list
+async function deleteList(listId: string) {
+  if (!confirm("Are you sure you want to delete this list?")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/lists/${listId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Fetch and update the lists after deletion
+    fetchAndDisplayLists();
+  } catch (error) {
+    console.error("Failed to delete list:", error);
+  }
+}
+
+// Fucntion to update a list
+async function editList(listId: string) {
+  const newListName = prompt("Enter new list name:");
+  if (newListName === null || newListName.trim() === "") {
+    return; // User cancelled the prompt or entered a blank name
+  }
+
+  try {
+    const response = await fetch(`/api/lists/${listId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ listName: newListName })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Fetch and update the lists after renaming
+    fetchAndDisplayLists();
+  } catch (error) {
+    console.error("Failed to update list name:", error);
   }
 }
 

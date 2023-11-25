@@ -140,12 +140,60 @@ app.get('/api/lists/:listId/tasks', async (req, res) => {
 // Get all lists
 app.get('/api/lists', async (req, res) => {
     try {
-        const [lists] = await dbPool.query('SELECT * FROM sys.Lists');
+        const [lists] = await dbPool.query('SELECT * FROM sys.Lists ORDER BY listOrder');
         res.json(lists);
     }
     catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Database error' });
+    }
+});
+// Update the order of lists
+app.put('/api/lists/order', async (req, res) => {
+    const { orderedListIds } = req.body;
+    try {
+        await Promise.all(orderedListIds.map((listId, index) => dbPool.query('UPDATE sys.Lists SET listOrder = ? WHERE listId = ?', [index, listId])));
+        res.status(200).json({ message: 'List order updated' });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+// Delete a specific list by listId
+app.delete('/api/lists/:listId', async (req, res) => {
+    const { listId } = req.params;
+    try {
+        const [result] = await dbPool.query('DELETE FROM sys.Lists WHERE listId = ?', [listId]);
+        const okPacket = result;
+        if (okPacket.affectedRows === 0) {
+            return res.status(404).json({ error: 'List not found' });
+        }
+        return res.status(200).json({ message: 'List deleted successfully', listId });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+    }
+});
+// Update a specific list by listId
+app.put('/api/lists/:listId', async (req, res) => {
+    const { listId } = req.params;
+    const { listName } = req.body;
+    if (!listName || typeof listName !== 'string') {
+        return res.status(400).json({ error: 'Invalid list name' });
+    }
+    try {
+        const [result] = await dbPool.query('UPDATE sys.Lists SET listName = ? WHERE listId = ?', [listName, listId]);
+        const okPacket = result;
+        if (okPacket.affectedRows === 0) {
+            return res.status(404).json({ error: 'List not found' });
+        }
+        return res.status(200).json({ message: 'List updated successfully', listId });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
     }
 });
 app.listen(PORT, () => {
