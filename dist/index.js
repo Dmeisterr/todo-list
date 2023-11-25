@@ -1,12 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const express = require("express");
-const path = require("path");
-const bodyParser = require("body-parser");
+const express_1 = __importDefault(require("express"));
+const path_1 = __importDefault(require("path"));
+const body_parser_1 = __importDefault(require("body-parser"));
 const db_1 = require("./config/db");
-const app = express();
-app.use(bodyParser.json());
-app.use(express.static(path.join('dist', 'server', 'public_html')));
+const app = (0, express_1.default)();
+app.use(body_parser_1.default.json());
+app.use(express_1.default.static(path_1.default.join('dist', 'public_html')));
 const PORT = process.env.PORT || 3000;
 let dbPool;
 // Connect to MySQL database

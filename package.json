@@ -4,7 +4,7 @@
   "description": "A To-Do List web application built with Node.js, TypeScript, and SQL",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && npx copyfiles -u 1 src/server/public_html/* dist/",
+    "build": "tsc && npx copyfiles -u 1 \"src/public_html/**/*\" dist/",
     "start": "npm run build && node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,15 +21,19 @@
   "dependencies": {
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
+    "dragula": "^3.7.3",
     "express": "^4.18.2",
-    "mysql2": "^3.6.2"
+    "mysql2": "^3.6.2",
+    "sortablejs": "^1.15.0"
   },
   "devDependencies": {
+    "@types/dragula": "^3.7.4",
     "@types/express": "^4.17.19",
     "@types/node": "^20.8.6",
+    "@types/sortablejs": "^1.15.7",
     "copyfiles": "^2.4.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.2"
   },
   "keywords": []
 }

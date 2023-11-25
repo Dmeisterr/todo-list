@@ -1,6 +1,6 @@
-import * as express from 'express';
-import * as path from 'path';
-import * as bodyParser from 'body-parser';
+import express from 'express';
+import path from 'path';
+import bodyParser from 'body-parser';
 import { Request, Response } from 'express';
 import { connectDB } from './config/db';
 import { Pool, OkPacket } from 'mysql2/promise';
@@ -9,7 +9,7 @@ import { Pool, OkPacket } from 'mysql2/promise';
 const app = express();
 app.use(bodyParser.json());
 
-app.use(express.static(path.join('dist', 'server', 'public_html')));
+app.use(express.static(path.join('dist', 'public_html')));
 
 const PORT = process.env.PORT || 3000;
 
