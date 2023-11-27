@@ -126,7 +126,7 @@ header {
 }
 
 /* Style for list items remains the same */
-#lists li, #tasks li {
+#tasks li {
     background-color: #e4e4e4;
     margin: 8px 0;
     padding: 10px;
@@ -134,4 +134,23 @@ header {
     vertical-align:middle;
     border-radius: 4px;
     list-style-type:none;
-}
+  }
+
+  /* Style for list items remains the same */
+#lists li {
+    background-color: #e4e4e4;
+    margin: 8px 0;
+    padding: 10px;
+    text-align: left;
+    vertical-align:middle;
+    border-radius: 4px;
+    list-style-type:none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .button-container {
+    /* Align buttons to the right */
+    margin-left: auto;
+  }

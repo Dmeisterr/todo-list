@@ -3,7 +3,7 @@ import path from 'path';
 import bodyParser from 'body-parser';
 import { Request, Response } from 'express';
 import { connectDB } from './config/db';
-import { Pool, OkPacket } from 'mysql2/promise';
+import { Pool, OkPacket, RowDataPacket } from 'mysql2/promise';
 
 
 const app = express();
@@ -57,24 +57,29 @@ app.post('/api/lists/:listId/tasks', async (req: Request, res: Response) => {
 
 // create a new list
 app.post('/api/lists', async (req: Request, res: Response) => {
-	const { listName } = req.body;
+    const { listName } = req.body;
 
-	// Data validation
-	if (!listName || typeof listName !== 'string') {
-		return res.status(400).json({ error: 'Invalid list name' });
-	}
+    // Data validation
+    if (!listName || typeof listName !== 'string') {
+        return res.status(400).json({ error: 'Invalid list name' });
+    }
 
-	try {
-		// Insert the new list into the database
-		const [result] = await dbPool.query('INSERT INTO sys.Lists (listName) VALUES (?)', [listName]);
-		const okPacket = result as OkPacket;
+    try {
+        // First, find the maximum listOrder value
+        const [rows] = await dbPool.query('SELECT MAX(listOrder) as maxOrder FROM sys.Lists');
+        const maxOrderResult = rows as RowDataPacket[];
+        const maxOrder = maxOrderResult[0]?.maxOrder ?? 0; // Use nullish coalescing
 
-		// Respond with the ID of the newly created list
-		return res.status(201).json({ message: 'List created', id: okPacket.insertId });
-	} catch (err) {
-		console.error(err);
-		return res.status(500).json({ error: 'Database error' });
-	}
+        // Insert the new list with the next order value
+        const [result] = await dbPool.query('INSERT INTO sys.Lists (listName, listOrder) VALUES (?, ?)', [listName, maxOrder + 1]);
+        const okPacket = result as OkPacket;
+
+        // Respond with the ID of the newly created list
+        return res.status(201).json({ message: 'List created', id: okPacket.insertId });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // updates existing todo
@@ -189,23 +194,28 @@ app.put('/api/lists/order', async (req: Request, res: Response) => {
 });
 
 // Delete a specific list by listId
-app.delete('/api/lists/:listId', async (req, res) => {
-    const { listId } = req.params;
-
-    try {
-        const [result] = await dbPool.query('DELETE FROM sys.Lists WHERE listId = ?', [listId]);
-        const okPacket = result as OkPacket;
-
-        if (okPacket.affectedRows === 0) {
-            return res.status(404).json({ error: 'List not found' });
-        }
-
-        return res.status(200).json({ message: 'List deleted successfully', listId });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-    }
-});
+app.delete('/api/lists/:listId', async (req: Request, res: Response) => {
+	const { listId } = req.params;
+  
+	try {
+	  // First, delete all tasks associated with this list
+	  await dbPool.query('DELETE FROM sys.Tasks WHERE listId = ?', [listId]);
+  
+	  // Then, delete the list
+	  const [result] = await dbPool.query('DELETE FROM sys.Lists WHERE listId = ?', [listId]);
+	  const okPacket = result as OkPacket;
+  
+	  if (okPacket.affectedRows === 0) {
+		return res.status(404).json({ error: 'List not found' });
+	  }
+  
+	  return res.status(200).json({ message: 'List and associated tasks deleted', listId });
+	} catch (err) {
+	  console.error(err);
+	  return res.status(500).json({ error: 'Database error' });
+	}
+  });
+  
 
 // Update a specific list by listId
 app.put('/api/lists/:listId', async (req, res) => {

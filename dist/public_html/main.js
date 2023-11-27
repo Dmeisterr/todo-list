@@ -60,6 +60,8 @@ function addListToDisplay(list) {
     console.log("listID:", list.listId);
     const listId = listItem.getAttribute('data-list-id');
     console.log("Clicked list ID:", listId);
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('button-container');
     // Add Edit button
     const editButton = document.createElement('button');
     editButton.innerText = 'Edit';
@@ -67,7 +69,7 @@ function addListToDisplay(list) {
         event.stopPropagation(); // Prevent triggering the list item click event
         editList(list.listId);
     });
-    listItem.appendChild(editButton);
+    buttonContainer.appendChild(editButton);
     // Add Delete button
     const deleteButton = document.createElement('button');
     deleteButton.innerText = 'Delete';
@@ -75,7 +77,8 @@ function addListToDisplay(list) {
         event.stopPropagation(); // Prevent triggering the list item click event
         deleteList(list.listId);
     });
-    listItem.appendChild(deleteButton);
+    buttonContainer.appendChild(deleteButton);
+    listItem.appendChild(buttonContainer);
     if (listsContainer != null)
         listsContainer.appendChild(listItem);
     setupListEventListeners();

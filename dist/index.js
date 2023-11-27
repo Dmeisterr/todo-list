@@ -52,8 +52,12 @@ app.post('/api/lists', async (req, res) => {
         return res.status(400).json({ error: 'Invalid list name' });
     }
     try {
-        // Insert the new list into the database
-        const [result] = await dbPool.query('INSERT INTO sys.Lists (listName) VALUES (?)', [listName]);
+        // First, find the maximum listOrder value
+        const [rows] = await dbPool.query('SELECT MAX(listOrder) as maxOrder FROM sys.Lists');
+        const maxOrderResult = rows;
+        const maxOrder = maxOrderResult[0]?.maxOrder ?? 0; // Use nullish coalescing
+        // Insert the new list with the next order value
+        const [result] = await dbPool.query('INSERT INTO sys.Lists (listName, listOrder) VALUES (?, ?)', [listName, maxOrder + 1]);
         const okPacket = result;
         // Respond with the ID of the newly created list
         return res.status(201).json({ message: 'List created', id: okPacket.insertId });
@@ -164,12 +168,15 @@ app.put('/api/lists/order', async (req, res) => {
 app.delete('/api/lists/:listId', async (req, res) => {
     const { listId } = req.params;
     try {
+        // First, delete all tasks associated with this list
+        await dbPool.query('DELETE FROM sys.Tasks WHERE listId = ?', [listId]);
+        // Then, delete the list
         const [result] = await dbPool.query('DELETE FROM sys.Lists WHERE listId = ?', [listId]);
         const okPacket = result;
         if (okPacket.affectedRows === 0) {
             return res.status(404).json({ error: 'List not found' });
         }
-        return res.status(200).json({ message: 'List deleted successfully', listId });
+        return res.status(200).json({ message: 'List and associated tasks deleted', listId });
     }
     catch (err) {
         console.error(err);
