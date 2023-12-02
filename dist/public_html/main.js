@@ -1,5 +1,65 @@
 "use strict";
 let currentListId = null;
+/**
+ * logs a user in to the page
+ */
+function loginUser() {
+    const userInputElement = document.getElementById('username');
+    const passInputElement = document.getElementById('password');
+    if (!userInputElement || !passInputElement) {
+        alert('Username or password field is missing');
+        return;
+    }
+    const user = userInputElement.value;
+    const pass = passInputElement.value;
+    const data = { username: user, password: pass };
+    fetch('/account/login', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then((response) => {
+        return response.text();
+    })
+        .then((text) => {
+        console.log(text);
+        if (text.startsWith('SUCCESS')) {
+            alert(text);
+            window.location.href = '/index.html';
+        }
+        else {
+            alert('Login failed');
+        }
+    })
+        .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+function addNewUser() {
+    const url = '/add/user/';
+    const newUserInputElement = document.getElementById('username');
+    const newPassInputElement = document.getElementById('password');
+    if (!newUserInputElement || !newPassInputElement) {
+        alert('Username or password field is missing');
+        return;
+    }
+    const newUser = newUserInputElement.value;
+    const newPass = newPassInputElement.value;
+    const userData = {
+        username: newUser,
+        password: newPass,
+        listings: [],
+        purchases: []
+    };
+    fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(userData),
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then(response => response.text())
+        .then(data => alert(data))
+        .catch((error) => console.error('Error:', error));
+}
 function setupListEventListeners() {
     document.querySelectorAll('#lists li').forEach(listItem => {
         listItem.addEventListener('click', function () {

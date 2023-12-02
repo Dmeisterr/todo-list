@@ -1,0 +1,32 @@
+<!-- html file to display the client side input fields -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet"
+        type="text/css"
+        href="./login.css">
+        <meta charset="utf-8">
+        <title>Login Page</title>
+    </head>
+    <body>
+        <h1 id="title">Todo Login</h1>
+        <div id="loginBlock">
+            <h1>
+                Login here
+            </h1>
+            <table id='indexTable1'>
+                <tr>
+                    <td><label for="username">Username:</label></td>
+                    <td><input type="text" id="username" name="username"></td>
+                </tr>
+                <tr>
+                    <td><label for="password">Password:</label></td>
+                    <td><input type="password" id="password" name="password">
+                </tr>
+            </table>
+            <input onclick="loginUser()" type="submit" value="Login">
+            <input onclick="addNewUser()" type="submit" value="Create Account">
+        </div>
+        <script src="./main.js"></script>
+    </body>
+</html>

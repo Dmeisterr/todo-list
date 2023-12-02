@@ -6,10 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const body_parser_1 = __importDefault(require("body-parser"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const db_1 = require("./config/db");
 const app = (0, express_1.default)();
+app.use((0, cookie_parser_1.default)());
 app.use(body_parser_1.default.json());
-app.use(express_1.default.static(path_1.default.join('dist', 'public_html')));
+app.get('/', (req, res) => {
+    res.redirect('/index.html');
+});
 const PORT = process.env.PORT || 3000;
 let dbPool;
 // Connect to MySQL database
@@ -20,6 +24,176 @@ let dbPool;
     .catch(error => {
     console.error(`Database connection error: ${error}`);
 });
+let sessions = {};
+function addSession(username) {
+    const sid = Math.floor(Math.random() * 1000000000);
+    const now = Date.now();
+    sessions[username] = { id: sid, time: now };
+    return sid;
+}
+function removeSessions() {
+    const now = Date.now();
+    const usernames = Object.keys(sessions);
+    usernames.forEach((username) => {
+        const last = sessions[username].time;
+        if (last + 20000 < now) {
+            delete sessions[username];
+        }
+    });
+    console.log(sessions);
+}
+setInterval(removeSessions, 60000 * 10);
+function authenticate(req, res, next) {
+    const c = req.cookies;
+    console.log('auth request:');
+    console.log(req.cookies);
+    if (c && c.login) {
+        if (sessions[c.login.username] && sessions[c.login.username].id === c.login.sessionID) {
+            next();
+        }
+        else {
+            res.redirect('/login.html');
+        }
+    }
+    else {
+        res.redirect('/login.html');
+    }
+}
+// ------------------ USERS -----------------------------------------------------
+// add a new user
+app.post('/add/user', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
+    }
+    try {
+        const [rows] = await dbPool.execute('SELECT * FROM Users WHERE username = ?', [username]);
+        if (rows.length > 0) {
+            return res.status(409).json({ message: 'USERNAME ALREADY TAKEN' });
+        }
+        const [result] = await dbPool.execute('INSERT INTO Users (username, password) VALUES (?, ?)', [username, password]);
+        const insertId = result.insertId;
+        res.status(201).json({ message: 'USER CREATED', userId: insertId });
+    }
+    catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+// login
+app.post('/account/login', async (req, res) => {
+    const { username, password } = req.body;
+    const query = 'SELECT * FROM Users WHERE username = ? AND password = ?';
+    try {
+        const [results] = await dbPool.execute(query, [username, password]);
+        const rows = results;
+        if (rows.length === 0) {
+            res.end('Could not find account');
+        }
+        else {
+            let sid = addSession(username);
+            let userId = rows[0].userId;
+            res.cookie("login", { username: username, sessionID: sid, userId: userId }, { maxAge: 60000 * 10 });
+            res.end('SUCCESS');
+        }
+    }
+    catch (err) {
+        console.error(err);
+        res.end('Error in database query');
+    }
+});
+// ------------------ LISTS -----------------------------------------------------
+// create a new list
+app.post('/api/lists', async (req, res) => {
+    const { listName } = req.body;
+    const { userId } = req.cookies.login; // Assuming the userId is stored in the "login" cookie
+    console.log("userId: " + userId);
+    // Data validation
+    if (!listName || typeof listName !== 'string') {
+        return res.status(400).json({ error: 'Invalid list name' });
+    }
+    try {
+        // First, find the maximum listOrder value
+        const [rows] = await dbPool.query('SELECT MAX(listOrder) as maxOrder FROM sys.Lists');
+        const maxOrderResult = rows;
+        const maxOrder = maxOrderResult[0]?.maxOrder ?? 0; // Use nullish coalescing
+        // Insert the new list with the next order value and userId
+        const [result] = await dbPool.query('INSERT INTO sys.Lists (listName, listOrder, userId) VALUES (?, ?, ?)', [listName, maxOrder + 1, userId]);
+        const okPacket = result;
+        // Respond with the ID of the newly created list
+        return res.status(201).json({ message: 'List created', id: okPacket.insertId });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+    }
+});
+// Get all lists for the current user
+app.get('/api/lists', async (req, res) => {
+    try {
+        const { userId } = req.cookies.login; // Assuming the userId is stored in the "login" cookie
+        const [lists] = await dbPool.query('SELECT * FROM sys.Lists WHERE userId = ? ORDER BY listOrder', [userId]);
+        res.json(lists);
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+// Update the order of lists
+app.put('/api/lists/order', async (req, res) => {
+    const { orderedListIds } = req.body;
+    const { userId } = req.cookies.login; // Assuming the userId is stored in the "login" cookie
+    try {
+        await Promise.all(orderedListIds.map((listId, index) => dbPool.query('UPDATE sys.Lists SET listOrder = ? WHERE listId = ? AND userId = ?', [index, listId, userId])));
+        res.status(200).json({ message: 'List order updated' });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+// Delete a specific list by listId
+app.delete('/api/lists/:listId', async (req, res) => {
+    const { listId } = req.params;
+    const { userId } = req.cookies.login; // Assuming the userId is stored in the "login" cookie
+    try {
+        // First, delete all tasks associated with this list
+        await dbPool.query('DELETE FROM sys.Tasks WHERE listId = ?', listId);
+        // Then, delete the list
+        const [result] = await dbPool.query('DELETE FROM sys.Lists WHERE listId = ? AND userId = ?', [listId, userId]);
+        const okPacket = result;
+        if (okPacket.affectedRows === 0) {
+            return res.status(404).json({ error: 'List not found' });
+        }
+        return res.status(200).json({ message: 'List and associated tasks deleted', listId });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+    }
+});
+// Update a specific list by listId
+app.put('/api/lists/:listId', async (req, res) => {
+    const { listId } = req.params;
+    const { listName } = req.body;
+    if (!listName || typeof listName !== 'string') {
+        return res.status(400).json({ error: 'Invalid list name' });
+    }
+    try {
+        const [result] = await dbPool.query('UPDATE sys.Lists SET listName = ? WHERE listId = ?', [listName, listId]);
+        const okPacket = result;
+        if (okPacket.affectedRows === 0) {
+            return res.status(404).json({ error: 'List not found' });
+        }
+        return res.status(200).json({ message: 'List updated successfully', listId });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+    }
+});
+// ------------------ TASKS -----------------------------------------------------
 // creates new todo
 // test with: "curl -X POST -H "Content-Type: application/json" -d '{"taskName": "testname1", "taskInfo": "testinfo", "isCompleted": false, "deadline": "2023-10-23"}' "http://localhost:3000/api/todo""
 app.post('/api/lists/:listId/tasks', async (req, res) => {
@@ -38,29 +212,6 @@ app.post('/api/lists/:listId/tasks', async (req, res) => {
         const [result] = await dbPool.query('INSERT INTO sys.Tasks (listId, taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?, ?)', [listId, taskName, taskInfo, isCompleted, deadline]);
         const okPacket = result;
         return res.status(201).json({ message: 'To-Do item created', id: okPacket.insertId });
-    }
-    catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-    }
-});
-// create a new list
-app.post('/api/lists', async (req, res) => {
-    const { listName } = req.body;
-    // Data validation
-    if (!listName || typeof listName !== 'string') {
-        return res.status(400).json({ error: 'Invalid list name' });
-    }
-    try {
-        // First, find the maximum listOrder value
-        const [rows] = await dbPool.query('SELECT MAX(listOrder) as maxOrder FROM sys.Lists');
-        const maxOrderResult = rows;
-        const maxOrder = maxOrderResult[0]?.maxOrder ?? 0; // Use nullish coalescing
-        // Insert the new list with the next order value
-        const [result] = await dbPool.query('INSERT INTO sys.Lists (listName, listOrder) VALUES (?, ?)', [listName, maxOrder + 1]);
-        const okPacket = result;
-        // Respond with the ID of the newly created list
-        return res.status(201).json({ message: 'List created', id: okPacket.insertId });
     }
     catch (err) {
         console.error(err);
@@ -141,68 +292,15 @@ app.get('/api/lists/:listId/tasks', async (req, res) => {
         res.status(500).json({ error: 'Database error' });
     }
 });
-// Get all lists
-app.get('/api/lists', async (req, res) => {
-    try {
-        const [lists] = await dbPool.query('SELECT * FROM sys.Lists ORDER BY listOrder');
-        res.json(lists);
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
-// Update the order of lists
-app.put('/api/lists/order', async (req, res) => {
-    const { orderedListIds } = req.body;
-    try {
-        await Promise.all(orderedListIds.map((listId, index) => dbPool.query('UPDATE sys.Lists SET listOrder = ? WHERE listId = ?', [index, listId])));
-        res.status(200).json({ message: 'List order updated' });
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
-// Delete a specific list by listId
-app.delete('/api/lists/:listId', async (req, res) => {
-    const { listId } = req.params;
-    try {
-        // First, delete all tasks associated with this list
-        await dbPool.query('DELETE FROM sys.Tasks WHERE listId = ?', [listId]);
-        // Then, delete the list
-        const [result] = await dbPool.query('DELETE FROM sys.Lists WHERE listId = ?', [listId]);
-        const okPacket = result;
-        if (okPacket.affectedRows === 0) {
-            return res.status(404).json({ error: 'List not found' });
-        }
-        return res.status(200).json({ message: 'List and associated tasks deleted', listId });
-    }
-    catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-    }
-});
-// Update a specific list by listId
-app.put('/api/lists/:listId', async (req, res) => {
-    const { listId } = req.params;
-    const { listName } = req.body;
-    if (!listName || typeof listName !== 'string') {
-        return res.status(400).json({ error: 'Invalid list name' });
-    }
-    try {
-        const [result] = await dbPool.query('UPDATE sys.Lists SET listName = ? WHERE listId = ?', [listName, listId]);
-        const okPacket = result;
-        if (okPacket.affectedRows === 0) {
-            return res.status(404).json({ error: 'List not found' });
-        }
-        return res.status(200).json({ message: 'List updated successfully', listId });
-    }
-    catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Database error' });
-    }
-});
+app.use('/index.html', authenticate);
+app.use(express_1.default.static(path_1.default.join('dist', 'public_html')));
+// app.use('*', (req, res, next) => {
+// 	if (req.path === '/login.html') {
+// 	  next();
+// 	} else {
+// 	  authenticate(req, res, next);
+// 	}
+//   });
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

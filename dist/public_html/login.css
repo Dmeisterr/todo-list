@@ -1,0 +1,95 @@
+/* styles the html client code  */
+
+div {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    margin: 40px;
+    margin-bottom: 50px;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+#indexTable1, #indexTable2 {
+    margin-left: auto;
+    margin-right: auto;
+    border-spacing: 10px;
+    text-align: left;
+}
+
+#postTable {
+    margin-left: auto;
+    margin-right: auto;
+    border-spacing: 10px;
+}
+
+#homeTable {
+    margin-left: auto;
+    margin-right: auto;
+    border-spacing: 30px;
+}
+
+#loginBlock {
+    border-style: solid;
+    padding: 10px;
+    background-color: rgb(148, 148, 148);
+}
+
+#addUserBlock {
+    border-style: solid;
+    border-color: black;
+    padding: 10px;
+    background-color: rgb(148, 148, 148);
+}
+
+#addItemBlock {
+    border-style: dashed;
+    border-color: black;
+    padding: 10px;
+    background-color: rgb(147, 147, 147);
+}
+
+body {
+    background-color: aquamarine;
+}
+
+#leftBlock {
+    background-color: rgb(146, 146, 146);
+    position: fixed;
+    margin: 0;
+    left: 0;
+    right: 50%;
+    bottom: 0;
+    top: 10%;
+    border: 5px;
+    border-style: solid;
+    border-color: black;
+    overflow: auto;
+}
+
+#rightBlock > div {
+    margin: 0;
+    padding: 0;
+    padding-top: 5px;
+}
+
+#topSpace {
+    padding-top: 30px !important;
+}
+
+#rightBlock {
+    background-color: rgb(146, 146, 146);
+    position: fixed;
+    margin: 0;
+    left: 50%;
+    right: 0;
+    bottom: 0;
+    top: 10%;
+    border: 5px;
+    border-style: solid;
+    border-color: black;
+    overflow: auto;
+}
+
+#title {
+    font-size: 5vh;
+}

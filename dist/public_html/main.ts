@@ -3,6 +3,76 @@ declare var Sortable: any;
 
 let currentListId: string | null = null;
 
+/**
+ * logs a user in to the page
+ */
+ function loginUser(): void {
+  const userInputElement: HTMLInputElement | null = document.getElementById('username') as HTMLInputElement;
+  const passInputElement: HTMLInputElement | null = document.getElementById('password') as HTMLInputElement;
+
+  if (!userInputElement || !passInputElement) {
+    alert('Username or password field is missing');
+    return;
+  }
+
+  const user: string = userInputElement.value;
+  const pass: string = passInputElement.value;
+  const data: { username: string; password: string } = { username: user, password: pass };
+
+  fetch('/account/login', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then((response) => {
+    return response.text();
+  })
+  .then((text) => {
+    console.log(text);
+    if (text.startsWith('SUCCESS')) {
+      alert(text);
+      window.location.href = '/index.html';
+    } else {
+      alert('Login failed');
+    }
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+}
+
+function addNewUser(): void {
+  const url: string = '/add/user/';
+
+  const newUserInputElement: HTMLInputElement | null = document.getElementById('username') as HTMLInputElement;
+  const newPassInputElement: HTMLInputElement | null = document.getElementById('password') as HTMLInputElement;
+
+  if (!newUserInputElement || !newPassInputElement) {
+    alert('Username or password field is missing');
+    return;
+  }
+
+  const newUser: string = newUserInputElement.value;
+  const newPass: string = newPassInputElement.value;
+
+  const userData: { username: string; password: string; listings: string[]; purchases: string[] } = {
+    username: newUser,
+    password: newPass,
+    listings: [],
+    purchases: []
+  };
+
+  fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(userData),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => response.text())
+  .then(data => alert(data))
+  .catch((error) => console.error('Error:', error));
+}
+
+
 function setupListEventListeners() {
   document.querySelectorAll('#lists li').forEach(listItem => {
     listItem.addEventListener('click', function (this: HTMLLIElement) {
