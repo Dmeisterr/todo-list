@@ -1,5 +1,21 @@
 "use strict";
 let currentListId = null;
+function setupListEventListeners() {
+    document.querySelectorAll('#lists li').forEach(listItem => {
+        listItem.addEventListener('click', function () {
+            const listId = this.getAttribute('data-list-id');
+            console.log("Clicked list ID:", listId);
+            if (listId !== null) {
+                currentListId = listId;
+                fetchTasksForList(listId);
+            }
+            else {
+                console.error('List ID is null');
+            }
+        });
+    });
+}
+// -----------------  Login and Registration -----------------
 /**
  * logs a user in to the page
  */
@@ -60,21 +76,7 @@ function addNewUser() {
         .then(data => alert(data))
         .catch((error) => console.error('Error:', error));
 }
-function setupListEventListeners() {
-    document.querySelectorAll('#lists li').forEach(listItem => {
-        listItem.addEventListener('click', function () {
-            const listId = this.getAttribute('data-list-id');
-            console.log("Clicked list ID:", listId);
-            if (listId !== null) {
-                currentListId = listId;
-                fetchTasksForList(listId);
-            }
-            else {
-                console.error('List ID is null');
-            }
-        });
-    });
-}
+// -----------------  Tasks ---------------------------------
 async function fetchTasksForList(listId) {
     try {
         const response = await fetch(`/api/lists/${listId}/tasks`);
@@ -96,6 +98,7 @@ function updateTaskListDisplay(tasks) {
                 const svg = new DOMParser().parseFromString(`<svg class="checkIcon" fill="currentColor" width="20" height="20" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z" fill="currentColor"></path></svg>`, 'image/svg+xml').documentElement;
                 taskItem.appendChild(svg);
                 svg.addEventListener('click', () => updateTaskCompletion(task.taskId));
+                taskItem.setAttribute('data-task-id', task.taskId);
                 // Set the text content of the task item
                 taskItem.append(task.taskName);
                 // Create and append the info icon
@@ -107,8 +110,107 @@ function updateTaskListDisplay(tasks) {
                 tasksContainer.appendChild(taskItem);
             }
         });
+        initializeTasksSortable();
     }
 }
+async function updateTaskCompletion(taskId) {
+    if (!currentListId) {
+        console.error("No list selected");
+        return;
+    }
+    try {
+        const response = await fetch(`/api/todo/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ isCompleted: true })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Fetch and update the tasks list after updating the task
+        fetchTasksForList(currentListId);
+    }
+    catch (error) {
+        console.error("Failed to update task:", error);
+    }
+}
+// adds a task to current list
+async function addTask() {
+    if (currentListId === null) {
+        alert("Please select a list first!");
+        return;
+    }
+    const taskTextInput = document.getElementById('new-task-text');
+    const taskDeadlineInput = document.getElementById('task-deadline');
+    if (!taskTextInput || !taskDeadlineInput) {
+        console.error("Task text or deadline input not found");
+        return;
+    }
+    const taskText = taskTextInput.value;
+    const taskDeadline = taskDeadlineInput.value;
+    if (!taskText) {
+        alert("Please enter a task name.");
+        return;
+    }
+    // Prepare the task data
+    const taskData = {
+        taskName: taskText,
+        deadline: taskDeadline,
+        listId: currentListId
+    };
+    try {
+        const response = await fetch('/api/lists/' + currentListId + '/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(taskData)
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Clear the input fields after successful addition
+        taskTextInput.value = '';
+        taskDeadlineInput.value = '';
+        // Fetch and update the tasks list
+        fetchTasksForList(currentListId);
+    }
+    catch (error) {
+        console.error("Failed to add task:", error);
+    }
+}
+function initializeTasksSortable() {
+    const tasksContainer = document.getElementById('tasks');
+    if (tasksContainer) {
+        new Sortable(tasksContainer, {
+            animation: 150,
+            ghostClass: 'blue-background-class',
+            onEnd: async function () {
+                const orderedTaskIds = Array.from(tasksContainer.children)
+                    .map(child => child.getAttribute('data-task-id')); //TODO: fix this
+                await updateTaskOrder(orderedTaskIds);
+            },
+        });
+    }
+}
+async function updateTaskOrder(orderedTaskIds) {
+    try {
+        const response = await fetch('/api/tasks/order', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderedTaskIds })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    }
+    catch (error) {
+        console.error("Failed to update task order:", error);
+    }
+}
+// -----------------  Lists ---------------------------------
 // handles adding a single list item to the display
 function addListToDisplay(list) {
     const listsContainer = document.getElementById('lists');
@@ -192,74 +294,6 @@ async function updateListOrder(orderedListIds) {
     }
     catch (error) {
         console.error("Failed to update list order:", error);
-    }
-}
-async function updateTaskCompletion(taskId) {
-    if (!currentListId) {
-        console.error("No list selected");
-        return;
-    }
-    try {
-        const response = await fetch(`/api/todo/${taskId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ isCompleted: true })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        // Fetch and update the tasks list after updating the task
-        fetchTasksForList(currentListId);
-    }
-    catch (error) {
-        console.error("Failed to update task:", error);
-    }
-}
-// adds a task to current list
-async function addTask() {
-    if (currentListId === null) {
-        alert("Please select a list first!");
-        return;
-    }
-    const taskTextInput = document.getElementById('new-task-text');
-    const taskDeadlineInput = document.getElementById('task-deadline');
-    if (!taskTextInput || !taskDeadlineInput) {
-        console.error("Task text or deadline input not found");
-        return;
-    }
-    const taskText = taskTextInput.value;
-    const taskDeadline = taskDeadlineInput.value;
-    if (!taskText) {
-        alert("Please enter a task name.");
-        return;
-    }
-    // Prepare the task data
-    const taskData = {
-        taskName: taskText,
-        deadline: taskDeadline,
-        listId: currentListId
-    };
-    try {
-        const response = await fetch('/api/lists/' + currentListId + '/tasks', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(taskData)
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        // Clear the input fields after successful addition
-        taskTextInput.value = '';
-        taskDeadlineInput.value = '';
-        // Fetch and update the tasks list
-        fetchTasksForList(currentListId);
-    }
-    catch (error) {
-        console.error("Failed to add task:", error);
     }
 }
 // Function to add a new list

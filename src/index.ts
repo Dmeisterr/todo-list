@@ -243,10 +243,15 @@ app.post('/api/lists/:listId/tasks', async (req: Request, res: Response) => {
 
 	if (deadline == '') deadline = null;
 
+	// First, find the maximum taskOrder value
+	const [rows] = await dbPool.query('SELECT MAX(taskOrder) as maxOrder FROM sys.Tasks WHERE listId = ?', [listId]);
+	const maxOrderResult = rows as RowDataPacket[];
+	const maxOrder = maxOrderResult[0]?.maxOrder ?? 0; // Use nullish coalescing
+
 	try {
 		const [result] = await dbPool.query(
-			'INSERT INTO sys.Tasks (listId, taskName, taskInfo, isCompleted, deadline) VALUES (?, ?, ?, ?, ?)',
-			[listId, taskName, taskInfo, isCompleted, deadline]
+			'INSERT INTO sys.Tasks (listId, taskName, taskInfo, isCompleted, deadline, taskOrder) VALUES (?, ?, ?, ?, ?, ?)',
+			[listId, taskName, taskInfo, isCompleted, deadline, maxOrder + 1]
 		);
 		const okPacket = result as OkPacket;
 		return res.status(201).json({ message: 'To-Do item created', id: okPacket.insertId });
@@ -333,8 +338,24 @@ app.delete('/api/todo/:taskId', async (req: Request, res: Response) => {
 app.get('/api/lists/:listId/tasks', async (req: Request, res: Response) => {
 	const { listId } = req.params;
 	try {
-		const [tasks] = await dbPool.query('SELECT * FROM sys.Tasks WHERE listId = ?', [listId]);
+		const [tasks] = await dbPool.query('SELECT * FROM sys.Tasks WHERE listId = ? ORDER BY taskOrder', [listId]);
 		res.json(tasks);
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ error: 'Database error' });
+	}
+});
+
+// Update the order of lists
+app.put('/api/tasks/order', async (req: Request, res: Response) => {
+	const { orderedTaskIds } = req.body;
+	// const { userId } = req.cookies.login; 
+
+	try {
+		await Promise.all(orderedTaskIds.map((taskId: any, index: any) =>
+			dbPool.query('UPDATE sys.Tasks SET taskOrder = ? WHERE taskId = ?', [index, taskId])
+		));
+		res.status(200).json({ message: 'Task order updated' });
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({ error: 'Database error' });
