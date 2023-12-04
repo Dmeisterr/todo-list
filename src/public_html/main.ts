@@ -155,6 +155,55 @@ function updateTaskListDisplay(tasks: any[]) {
   }
 }
 
+// Function to delete a list
+async function deleteTask(taskId: string) {
+  if (!confirm("Are you sure you want to delete this task?")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/todo/${taskId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Fetch and update the tasks after deletion
+    fetchAndDisplayLists();
+  } catch (error) {
+    console.error("Failed to delete task:", error);
+  }
+}
+
+// Fucntion to update a list
+async function editTask(taskId: string) {
+  const newTaskName = prompt("Enter new task name:");
+  if (newTaskName === null || newTaskName.trim() === "") {
+    return; // User cancelled the prompt or entered a blank name
+  }
+
+  try {
+    const response = await fetch(`/api/todo/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ taskName: newTaskName })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Fetch and update the tasks after renaming
+    fetchAndDisplayLists();
+  } catch (error) {
+    console.error("Failed to update task name:", error);
+  }
+}
+
 async function updateTaskCompletion(taskId: string) {
   if (!currentListId) {
     console.error("No list selected");

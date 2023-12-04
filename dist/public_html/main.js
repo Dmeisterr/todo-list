@@ -113,7 +113,7 @@ function updateTaskListDisplay(tasks) {
                 editButton.innerText = 'Edit';
                 editButton.addEventListener('click', (event) => {
                     event.stopPropagation(); // Prevent triggering the list item click event
-                    editList(task.taskId);
+                    editTask(task.taskId);
                 });
                 buttonContainer.appendChild(editButton);
                 // Add Delete button
@@ -121,7 +121,7 @@ function updateTaskListDisplay(tasks) {
                 deleteButton.innerText = 'Delete';
                 deleteButton.addEventListener('click', (event) => {
                     event.stopPropagation(); // Prevent triggering the list item click event
-                    deleteList(task.taskId);
+                    deleteTask(task.taskId);
                 });
                 buttonContainer.appendChild(deleteButton);
                 taskItem.appendChild(buttonContainer);
@@ -130,6 +130,49 @@ function updateTaskListDisplay(tasks) {
             }
         });
         initializeTasksSortable();
+    }
+}
+// Function to delete a list
+async function deleteTask(taskId) {
+    if (!confirm("Are you sure you want to delete this task?")) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/todo/${taskId}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Fetch and update the tasks after deletion
+        fetchAndDisplayLists();
+    }
+    catch (error) {
+        console.error("Failed to delete task:", error);
+    }
+}
+// Fucntion to update a list
+async function editTask(taskId) {
+    const newTaskName = prompt("Enter new task name:");
+    if (newTaskName === null || newTaskName.trim() === "") {
+        return; // User cancelled the prompt or entered a blank name
+    }
+    try {
+        const response = await fetch(`/api/todo/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ taskName: newTaskName })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Fetch and update the tasks after renaming
+        fetchAndDisplayLists();
+    }
+    catch (error) {
+        console.error("Failed to update task name:", error);
     }
 }
 async function updateTaskCompletion(taskId) {
