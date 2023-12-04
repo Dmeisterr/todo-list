@@ -23,7 +23,7 @@ function setupListEventListeners() {
 /**
  * logs a user in to the page
  */
- function loginUser(): void {
+function loginUser(): void {
   const userInputElement: HTMLInputElement | null = document.getElementById('username') as HTMLInputElement;
   const passInputElement: HTMLInputElement | null = document.getElementById('password') as HTMLInputElement;
 
@@ -41,21 +41,21 @@ function setupListEventListeners() {
     body: JSON.stringify(data),
     headers: { 'Content-Type': 'application/json' }
   })
-  .then((response) => {
-    return response.text();
-  })
-  .then((text) => {
-    console.log(text);
-    if (text.startsWith('SUCCESS')) {
-      alert(text);
-      window.location.href = '/index.html';
-    } else {
-      alert('Login failed');
-    }
-  })
-  .catch((error) => {
-    console.error('Error:', error);
-  });
+    .then((response) => {
+      return response.text();
+    })
+    .then((text) => {
+      console.log(text);
+      if (text.startsWith('SUCCESS')) {
+        alert(text);
+        window.location.href = '/index.html';
+      } else {
+        alert('Login failed');
+      }
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
 }
 
 function addNewUser(): void {
@@ -84,9 +84,9 @@ function addNewUser(): void {
     body: JSON.stringify(userData),
     headers: { 'Content-Type': 'application/json' }
   })
-  .then(response => response.text())
-  .then(data => alert(data))
-  .catch((error) => console.error('Error:', error));
+    .then(response => response.text())
+    .then(data => alert(data))
+    .catch((error) => console.error('Error:', error));
 }
 
 // -----------------  Tasks ---------------------------------
@@ -108,7 +108,7 @@ function updateTaskListDisplay(tasks: any[]) {
     tasks.forEach(task => {
       if (!task.isCompleted) {
         const taskItem = document.createElement('li');
-    
+
         // Create and append the check icon
         const svg = new DOMParser().parseFromString(`<svg class="checkIcon" fill="currentColor" width="20" height="20" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z" fill="currentColor"></path></svg>`, 'image/svg+xml').documentElement;
         taskItem.appendChild(svg);
@@ -117,18 +117,41 @@ function updateTaskListDisplay(tasks: any[]) {
         // Set the text content of the task item
         taskItem.append(task.taskName);
 
-        // Create and append the info icon
-        const infoIcon = document.createElement('img');
-        infoIcon.src = './images/info.png';
-        infoIcon.classList.add('infoIcon');
-        taskItem.appendChild(infoIcon);
-    
+        // // Create and append the info icon
+        // const infoIcon = document.createElement('img');
+        // infoIcon.src = './images/info.png';
+        // infoIcon.classList.add('infoIcon');
+        // taskItem.appendChild(infoIcon);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('button-container');
+
+        // Add Edit button
+        const editButton = document.createElement('button');
+        editButton.innerText = 'Edit';
+        editButton.addEventListener('click', (event) => {
+          event.stopPropagation(); // Prevent triggering the list item click event
+          editTask(task.taskId);
+        });
+        buttonContainer.appendChild(editButton);
+
+        // Add Delete button
+        const deleteButton = document.createElement('button');
+        deleteButton.innerText = 'Delete';
+        deleteButton.addEventListener('click', (event) => {
+          event.stopPropagation(); // Prevent triggering the list item click event
+          deleteTask(task.taskId);
+        });
+        buttonContainer.appendChild(deleteButton);
+
+        taskItem.appendChild(buttonContainer);
+
         // Append the task item to the tasks container
         tasksContainer.appendChild(taskItem);
       }
     });
     initializeTasksSortable();
-    
+
   }
 }
 
@@ -144,7 +167,7 @@ async function updateTaskCompletion(taskId: string) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ isCompleted: true }) 
+      body: JSON.stringify({ isCompleted: true })
     });
 
     if (!response.ok) {
@@ -221,7 +244,7 @@ function initializeTasksSortable() {
       ghostClass: 'blue-background-class',
       onEnd: async function () {
         const orderedTaskIds = Array.from(tasksContainer.children)
-                                    .map(child => child.getAttribute('data-task-id')); //TODO: fix this
+          .map(child => child.getAttribute('data-task-id')); //TODO: fix this
         await updateTaskOrder(orderedTaskIds);
       },
     });
@@ -232,7 +255,7 @@ async function updateTaskOrder(orderedTaskIds: (string | null)[]) {
   try {
     const response = await fetch('/api/tasks/order', {
       method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderedTaskIds })
     });
 
@@ -316,7 +339,7 @@ function initializeSortable() {
       ghostClass: 'blue-background-class',
       onEnd: async function () {
         const orderedListIds = Array.from(listsContainer.children)
-                                    .map(child => child.getAttribute('data-list-id'));
+          .map(child => child.getAttribute('data-list-id'));
         await updateListOrder(orderedListIds);
       },
     });
@@ -327,7 +350,7 @@ async function updateListOrder(orderedListIds: (string | null)[]) {
   try {
     const response = await fetch('/api/lists/order', {
       method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderedListIds })
     });
 

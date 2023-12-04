@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>My ToDo List</title>
@@ -9,14 +10,25 @@
     <header>
         <h1>My Todo List</h1>
     </header>
+
     <body>
         <div id="leftColumn">
             <div id="list-div">
                 <ol id="lists">
-                    <!-- List names will go here -->
-                    <li>Reminders</li>
-                    <li>School</li>
-                    <li>Grocery List</li>
+                    <li data-list-id="14">
+                        food
+                        <div class="button-container">
+                            <button>Edit</button>
+                            <button>Delete</button>
+                        </div>
+                    </li>
+                    <li data-list-id="8">
+                        homework
+                        <div class="button-container">
+                            <button>Edit</button>
+                            <button>Delete</button>
+                        </div>
+                    </li>
                 </ol>
             </div>
             <span id="addList" class="dataEntry">
@@ -27,14 +39,23 @@
         <span id="centerColumn">
             <div id="task-div">
                 <ol id="tasks">
-                    <!-- Task items will go here -->
-                    <li>
-                        <svg class="checkIcon" fill="currentColor" width="20" height="20" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z" fill="currentColor"></path></svg>
-                        Do homework
+                    <li data-task-id="21">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="checkIcon" fill="currentColor" width="20"
+                            height="20" viewBox="0 0 20 16" focusable="false">
+                            <path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z"
+                                fill="currentColor"></path>
+                        </svg>
+                        tortillas
+                        <img src="./images/info.png" class="infoIcon">
                     </li>
-                    <li>
-                        <svg class="checkIcon" fill="currentColor" width="20" height="20" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg" focusable="false"><path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z" fill="currentColor"></path></svg>
-                        337 honors project
+                    <li data-task-id="20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="checkIcon" fill="currentColor" width="20"
+                            height="20" viewBox="0 0 20 16" focusable="false">
+                            <path d="M10 3a7 7 0 100 14 7 7 0 000-14zm-8 7a8 8 0 1116 0 8 8 0 01-16 0z"
+                                fill="currentColor"></path>
+                        </svg>
+                        fruit
+                        <img src="./images/info.png" class="infoIcon">
                     </li>
                 </ol>
             </div>
@@ -45,10 +66,11 @@
             </span>
         </span>
         <div id="rightColumn">
-            
+
         </div>
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
         <script src="main.js"></script>
     </body>
 </main>
+
 </html>

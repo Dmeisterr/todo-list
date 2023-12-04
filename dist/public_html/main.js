@@ -101,11 +101,30 @@ function updateTaskListDisplay(tasks) {
                 taskItem.setAttribute('data-task-id', task.taskId);
                 // Set the text content of the task item
                 taskItem.append(task.taskName);
-                // Create and append the info icon
-                const infoIcon = document.createElement('img');
-                infoIcon.src = './images/info.png';
-                infoIcon.classList.add('infoIcon');
-                taskItem.appendChild(infoIcon);
+                // // Create and append the info icon
+                // const infoIcon = document.createElement('img');
+                // infoIcon.src = './images/info.png';
+                // infoIcon.classList.add('infoIcon');
+                // taskItem.appendChild(infoIcon);
+                const buttonContainer = document.createElement('div');
+                buttonContainer.classList.add('button-container');
+                // Add Edit button
+                const editButton = document.createElement('button');
+                editButton.innerText = 'Edit';
+                editButton.addEventListener('click', (event) => {
+                    event.stopPropagation(); // Prevent triggering the list item click event
+                    editList(task.taskId);
+                });
+                buttonContainer.appendChild(editButton);
+                // Add Delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.innerText = 'Delete';
+                deleteButton.addEventListener('click', (event) => {
+                    event.stopPropagation(); // Prevent triggering the list item click event
+                    deleteList(task.taskId);
+                });
+                buttonContainer.appendChild(deleteButton);
+                taskItem.appendChild(buttonContainer);
                 // Append the task item to the tasks container
                 tasksContainer.appendChild(taskItem);
             }
