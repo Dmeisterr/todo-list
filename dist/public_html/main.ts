@@ -89,6 +89,19 @@ function addNewUser(): void {
     .catch((error) => console.error('Error:', error));
 }
 
+function logout(): void {
+  fetch('/account/logout', {
+    method: 'GET'
+  })
+    .then(() => {
+      // Redirect to the login page after successful logout
+      window.location.href = '/login.html';
+    })
+    .catch((error) => {
+      console.error("Failed to logout user", error);
+    });
+}
+
 // -----------------  Tasks ---------------------------------
 async function fetchTasksForList(listId: string) {
   try {
@@ -513,4 +526,11 @@ if (taskButton) {
   taskButton.addEventListener('click', addTask);
 } else {
   console.error("Task button not found");
+}
+
+const logoutButton = document.getElementById('logout-button');
+if (logoutButton){
+  logoutButton.addEventListener('click', logout);
+} else {
+  console.error("Logout button not found");
 }

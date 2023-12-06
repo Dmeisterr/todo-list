@@ -14,7 +14,7 @@ app.get('/', (req: Request, res: Response) => {
 	res.redirect('/index.html');
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 300;
 
 let dbPool: Pool;
 
@@ -117,6 +117,16 @@ app.post('/account/login', async (req, res) => {
 		console.error(err);
 		res.end('Error in database query');
 	}
+});
+
+// logout current user
+app.get('/account/logout', (req, res) => {
+	const c = req.cookies;
+	if (c && c.login) {
+		delete sessions[c.login.username];
+		res.clearCookie('login');
+	}
+	res.redirect('/login.html');
 });
 
 // ------------------ LISTS -----------------------------------------------------
