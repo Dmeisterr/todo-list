@@ -73,7 +73,7 @@ app.post('/add/user', async (req, res) => {
         }
         const [result] = await dbPool.execute('INSERT INTO Users (username, password) VALUES (?, ?)', [username, password]);
         const insertId = result.insertId;
-        res.status(201).json({ message: 'USER CREATED', userId: insertId });
+        res.status(201).json({ message: 'USER CREATED' });
     }
     catch (error) {
         console.error('Database error:', error);

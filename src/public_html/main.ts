@@ -47,16 +47,52 @@ function loginUser(): void {
     .then((text) => {
       console.log(text);
       if (text.startsWith('SUCCESS')) {
-        alert(text);
-        window.location.href = '/index.html';
+        checkAndCreateList();
       } else {
         alert('Login failed');
       }
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Error:', error);
     });
-}
+  }
+  
+  function checkAndCreateList() {
+    fetch('/api/lists', {
+      method: 'GET',
+      credentials: 'include' // to include cookies
+    })
+    .then(response => response.json())
+    .then(lists => {
+      if (lists.length === 0) {
+        // No lists found, create a new one
+        fetch('/api/lists', {
+          method: 'POST',
+          body: JSON.stringify({ listName: 'Reminders' }), 
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include' // to include cookies
+        })
+        .then(response => {
+          if (response.ok) {
+            alert('Login successful.');
+            window.location.href = '/index.html';
+          } else {
+            alert('Login successful, but failed to create a new list.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      } else {
+        // User already has lists
+        alert('Login successful');
+        window.location.href = '/index.html';
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  }
 
 function addNewUser(): void {
   const url: string = '/add/user/';
@@ -141,6 +177,7 @@ function updateTaskListDisplay(tasks: any[]) {
 
         // Add Edit button
         const editButton = document.createElement('button');
+        editButton.classList.add('button');
         editButton.innerText = 'Edit';
         editButton.addEventListener('click', (event) => {
           event.stopPropagation(); // Prevent triggering the list item click event
@@ -150,6 +187,7 @@ function updateTaskListDisplay(tasks: any[]) {
 
         // Add Delete button
         const deleteButton = document.createElement('button');
+        deleteButton.classList.add('button');
         deleteButton.innerText = 'Delete';
         deleteButton.addEventListener('click', (event) => {
           event.stopPropagation(); // Prevent triggering the list item click event
@@ -251,15 +289,18 @@ async function addTask() {
   }
 
   const taskTextInput = document.getElementById('new-task-text') as HTMLInputElement;
-  const taskDeadlineInput = document.getElementById('task-deadline') as HTMLInputElement;
+  // const taskDeadlineInput = document.getElementById('task-deadline') as HTMLInputElement;
 
-  if (!taskTextInput || !taskDeadlineInput) {
+
+  // if (!taskTextInput || !taskDeadlineInput) {
+    if (!taskTextInput) {
     console.error("Task text or deadline input not found");
     return;
   }
 
   const taskText = taskTextInput.value;
-  const taskDeadline = taskDeadlineInput.value;
+  // const taskDeadline = taskDeadlineInput.value;
+  const taskDeadline = '';
 
   if (!taskText) {
     alert("Please enter a task name.");
@@ -288,7 +329,7 @@ async function addTask() {
 
     // Clear the input fields after successful addition
     taskTextInput.value = '';
-    taskDeadlineInput.value = '';
+    // taskDeadlineInput.value = '';
 
     // Fetch and update the tasks list
     fetchTasksForList(currentListId);
@@ -347,6 +388,7 @@ function addListToDisplay(list: { listName: string | null; listId: string }) {
 
   // Add Edit button
   const editButton = document.createElement('button');
+  editButton.classList.add('button');
   editButton.innerText = 'Edit';
   editButton.addEventListener('click', (event) => {
     event.stopPropagation(); // Prevent triggering the list item click event
@@ -356,6 +398,7 @@ function addListToDisplay(list: { listName: string | null; listId: string }) {
 
   // Add Delete button
   const deleteButton = document.createElement('button');
+  deleteButton.classList.add('button');
   deleteButton.innerText = 'Delete';
   deleteButton.addEventListener('click', (event) => {
     event.stopPropagation(); // Prevent triggering the list item click event

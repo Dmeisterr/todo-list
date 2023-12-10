@@ -91,7 +91,7 @@ app.post('/add/user', async (req: Request, res: Response) => {
 		const [result] = await dbPool.execute('INSERT INTO Users (username, password) VALUES (?, ?)', [username, password]);
 		const insertId = (result as any).insertId;
 
-		res.status(201).json({ message: 'USER CREATED', userId: insertId });
+		res.status(201).json({ message: 'USER CREATED' });
 	} catch (error) {
 		console.error('Database error:', error);
 		res.status(500).json({ message: 'Internal server error' });

@@ -9,7 +9,7 @@
 <main>
     <header>
         <h1>My Todo List</h1>
-        <button id="logout-button">Logout</button>
+        <button class="button" id="logout-button">Logout</button>
     </header>
 
     <body>
@@ -19,22 +19,22 @@
                     <li data-list-id="14">
                         food
                         <div class="button-container">
-                            <button>Edit</button>
-                            <button>Delete</button>
+                            <button class="button">Edit</button>
+                            <button class="button">Delete</button>
                         </div>
                     </li>
                     <li data-list-id="8">
                         homework
                         <div class="button-container">
-                            <button>Edit</button>
-                            <button>Delete</button>
+                            <button class="button">Edit</button>
+                            <button class="button">Delete</button>
                         </div>
                     </li>
                 </ol>
             </div>
             <span id="addList" class="dataEntry">
                 <input type="text" id="new-list-text" placeholder="New List">
-                <button id="listButton">➡️</button>
+                <button id="listButton" class="enter-button">Enter</button>
             </span>
         </div>
         <span id="centerColumn">
@@ -61,9 +61,10 @@
                 </ol>
             </div>
             <span id="addTask" class="dataEntry">
+                
                 <input type="text" id="new-task-text" placeholder="New Task">
-                <input type="datetime-local" id="task-deadline">
-                <button id="taskButton">➡️</button>
+                <!-- <input type="datetime-local" id="task-deadline"> -->
+                <button id="taskButton" class="enter-button">Enter</button>
             </span>
         </span>
         <div id="rightColumn">
